@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数当てゲーム</title>
+  <style>
+    /* ===== 全体のスタイル ===== */
+    body {
+      font-family: sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    /* ===== ゲームのカード部分 ===== */
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      width: 360px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 0.5rem;
+      color: #1a1a2e;
+    }
+
+    /* ===== メッセージ表示エリア ===== */
+    #message {
+      font-size: 15px;
+      color: #555;
+      margin: 1rem 0;
+      min-height: 24px;
+    }
+
+    #hint {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 1rem;
+      min-height: 20px;
+    }
+
+    /* ===== 入力欄とボタン ===== */
+    input[type="number"] {
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 16px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+      outline: none;
+    }
+
+    input[type="number"]:focus {
+      border-color: #6c63ff;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+      background: #6c63ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    button:hover {
+      background: #574fd6;
+    }
+
+    /* ===== 試行履歴 ===== */
+    #history {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 1.2rem;
+    }
+
+    .history-item {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      border: 1px solid #ddd;
+      color: #888;
+    }
+
+    .history-item.high { background: #fff0eb; color: #b03000; border-color: #f0997b; }
+    .history-item.low  { background: #e8f0fb; color: #185fa5; border-color: #85b7eb; }
+    .history-item.correct { background: #eaf3de; color: #27500a; border-color: #97c459; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>数当てゲーム</h1>
+  <p style="font-size:13px; color:#aaa; margin:0;">1〜100の数字を7回以内に当てよう！</p>
+
+  <p id="message">数字を入力してください。</p>
+  <p id="hint"></p>
+
+  <input type="number" id="guess-input" min="1" max="100" placeholder="1〜100">
+  <button onclick="submitGuess()">送信</button>
+  <button id="restart-btn" onclick="restart()" style="display:none; background:#aaa; margin-top:8px;">もう一度</button>
+
+  <div id="history"></div>
+</div>
+
+<script>
+  // ===== 変数の定義 =====
+  const MAX_TRIES = 7;   // 最大試行回数
+  let secret;            // 正解の数字
+  let tries;             // 試した回数
+  let history;           // 試した数字の記録
+
+  // ===== ゲームを初期化する =====
+  function restart() {
+    secret  = Math.floor(Math.random() * 100) + 1; // 1〜100のランダムな数
+    tries   = 0;
+    history = [];
+    document.getElementById('message').textContent    = '数字を入力してください。';
+    document.getElementById('hint').textContent       = '';
+    document.getElementById('history').innerHTML      = '';
+    document.getElementById('guess-input').value      = '';
+    document.getElementById('guess-input').disabled   = false;
+    document.querySelector('button').disabled         = false;
+    document.getElementById('restart-btn').style.display = 'none';
+    document.getElementById('guess-input').focus();
+  }
+
+  // ===== 送信ボタンが押されたとき =====
+  function submitGuess() {
+    const input = document.getElementById('guess-input');
+    const val   = parseInt(input.value);
+
+    // 入力チェック
+    if (isNaN(val) || val < 1 || val > 100) {
+      document.getElementById('message').textContent = '1〜100の整数を入力してください。';
+      return;
+    }
+    if (history.includes(val)) {
+      document.getElementById('message').textContent = 'その数字はもう試しました！';
+      return;
+    }
+
+    tries++;
+    history.push(val);
+
+    // 履歴バッジを追加
+    const badge = document.createElement('span');
+    badge.className = 'history-item';
+    badge.textContent = val;
+
+    if (val === secret) {
+      // 正解！
+      badge.classList.add('correct');
+      document.getElementById('history').appendChild(badge);
+      document.getElementById('message').textContent = '正解！ ' + tries + '回で当てました！';
+      document.getElementById('hint').textContent    = '答えは ' + secret + ' でした。';
+      endGame();
+
+    } else if (tries >= MAX_TRIES) {
+      // 試行回数オーバー
+      badge.classList.add(val > secret ? 'high' : 'low');
+      document.getElementById('history').appendChild(badge);
+      document.getElementById('message').textContent = '残念！ 答えは ' + secret + ' でした。';
+      document.getElementById('hint').textContent    = 'また挑戦してみよう！';
+      endGame();
+
+    } else {
+      // ヒントを表示
+      const remaining = MAX_TRIES - tries;
+      if (val > secret) {
+        badge.classList.add('high');
+        document.getElementById('message').textContent = val + ' は大きすぎます。';
+      } else {
+        badge.classList.add('low');
+        document.getElementById('message').textContent = val + ' は小さすぎます。';
+      }
+      document.getElementById('hint').textContent = '残り ' + remaining + ' 回';
+      document.getElementById('history').appendChild(badge);
+    }
+
+    input.value = '';
+    input.focus();
+  }
+
+  // ===== ゲーム終了処理 =====
+  function endGame() {
+    document.getElementById('guess-input').disabled = true;
+    document.querySelector('button').disabled       = true;
+    document.getElementById('restart-btn').style.display = 'block';
+  }
+
+  // Enterキーでも送信できる
+  document.getElementById('guess-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') submitGuess();
+  });
+
+  // ゲームスタート
+  restart();
+</script>
+
+</body>
+</html>
