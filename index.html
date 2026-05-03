@@ -3,214 +3,155 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>数当てゲーム</title>
+  <title>My Games</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    /* ===== 全体のスタイル ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f6f3;
+      --text: #1a1a18;
+      --muted: #888880;
+      --accent: #2d6a4f;
+      --card-bg: #ffffff;
+      --border: #e4e2dc;
+    }
+
     body {
-      font-family: sans-serif;
-      background: #f0f4f8;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
       min-height: 100vh;
-      margin: 0;
+      padding: 0 1.5rem;
     }
 
-    /* ===== ゲームのカード部分 ===== */
-    .card {
-      background: white;
-      border-radius: 16px;
-      padding: 2rem;
-      width: 360px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      text-align: center;
+    header {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 4rem 0 2rem;
+      border-bottom: 1px solid var(--border);
     }
 
-    h1 {
-      font-size: 22px;
-      margin-bottom: 0.5rem;
-      color: #1a1a2e;
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 0.75rem;
     }
 
-    /* ===== メッセージ表示エリア ===== */
-    #message {
+    header p {
       font-size: 15px;
-      color: #555;
-      margin: 1rem 0;
-      min-height: 24px;
+      color: var(--muted);
+      line-height: 1.6;
     }
 
-    #hint {
-      font-size: 13px;
-      color: #888;
+    main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 2.5rem 0 4rem;
+    }
+
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+    }
+
+    .game-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
       margin-bottom: 1rem;
-      min-height: 20px;
-    }
-
-    /* ===== 入力欄とボタン ===== */
-    input[type="number"] {
-      width: 100%;
-      padding: 10px 14px;
-      font-size: 16px;
-      border: 1.5px solid #ddd;
-      border-radius: 8px;
-      box-sizing: border-box;
-      margin-bottom: 10px;
-      outline: none;
-    }
-
-    input[type="number"]:focus {
-      border-color: #6c63ff;
-    }
-
-    button {
-      width: 100%;
-      padding: 10px;
-      font-size: 15px;
-      background: #6c63ff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 4px;
-    }
-
-    button:hover {
-      background: #574fd6;
-    }
-
-    /* ===== 試行履歴 ===== */
-    #history {
       display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
+      align-items: center;
+      gap: 1.25rem;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+
+    .game-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .game-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
+      background: #e8f5ee;
+      display: flex;
+      align-items: center;
       justify-content: center;
-      margin-top: 1.2rem;
+      font-size: 24px;
+      flex-shrink: 0;
     }
 
-    .history-item {
-      font-size: 12px;
-      padding: 3px 10px;
-      border-radius: 99px;
-      border: 1px solid #ddd;
-      color: #888;
+    .game-info { flex: 1; }
+
+    .game-title {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 4px;
     }
 
-    .history-item.high { background: #fff0eb; color: #b03000; border-color: #f0997b; }
-    .history-item.low  { background: #e8f0fb; color: #185fa5; border-color: #85b7eb; }
-    .history-item.correct { background: #eaf3de; color: #27500a; border-color: #97c459; }
+    .game-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .game-arrow {
+      font-size: 18px;
+      color: var(--border);
+      flex-shrink: 0;
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .game-card:hover .game-arrow {
+      color: var(--accent);
+      transform: translateX(3px);
+    }
+
+    footer {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 1.5rem 0 3rem;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+    }
   </style>
 </head>
 <body>
 
-<div class="card">
-  <h1>数当てゲーム</h1>
-  <p style="font-size:13px; color:#aaa; margin:0;">1〜100の数字を7回以内に当てよう！</p>
+  <header>
+    <h1>My Games</h1>
+    <p>自分で作ったブラウザゲームを公開しています。<br>HTMLとJavaScriptで作っています。</p>
+  </header>
 
-  <p id="message">数字を入力してください。</p>
-  <p id="hint"></p>
+  <main>
+    <p class="section-label">ゲーム一覧</p>
 
-  <input type="number" id="guess-input" min="1" max="100" placeholder="1〜100">
-  <button onclick="submitGuess()">送信</button>
-  <button id="restart-btn" onclick="restart()" style="display:none; background:#aaa; margin-top:8px;">もう一度</button>
+    <a class="game-card" href="game/index.html">
+      <div class="game-icon">🎯</div>
+      <div class="game-info">
+        <p class="game-title">数当てゲーム</p>
+        <p class="game-desc">1〜100の数字を7回以内に当てよう！ヒントをもとに絞り込んでいくシンプルなゲーム。</p>
+      </div>
+      <span class="game-arrow">→</span>
+    </a>
 
-  <div id="history"></div>
-</div>
+  </main>
 
-<script>
-  // ===== 変数の定義 =====
-  const MAX_TRIES = 7;   // 最大試行回数
-  let secret;            // 正解の数字
-  let tries;             // 試した回数
-  let history;           // 試した数字の記録
-
-  // ===== ゲームを初期化する =====
-  function restart() {
-    secret  = Math.floor(Math.random() * 100) + 1; // 1〜100のランダムな数
-    tries   = 0;
-    history = [];
-    document.getElementById('message').textContent    = '数字を入力してください。';
-    document.getElementById('hint').textContent       = '';
-    document.getElementById('history').innerHTML      = '';
-    document.getElementById('guess-input').value      = '';
-    document.getElementById('guess-input').disabled   = false;
-    document.querySelector('button').disabled         = false;
-    document.getElementById('restart-btn').style.display = 'none';
-    document.getElementById('guess-input').focus();
-  }
-
-  // ===== 送信ボタンが押されたとき =====
-  function submitGuess() {
-    const input = document.getElementById('guess-input');
-    const val   = parseInt(input.value);
-
-    // 入力チェック
-    if (isNaN(val) || val < 1 || val > 100) {
-      document.getElementById('message').textContent = '1〜100の整数を入力してください。';
-      return;
-    }
-    if (history.includes(val)) {
-      document.getElementById('message').textContent = 'その数字はもう試しました！';
-      return;
-    }
-
-    tries++;
-    history.push(val);
-
-    // 履歴バッジを追加
-    const badge = document.createElement('span');
-    badge.className = 'history-item';
-    badge.textContent = val;
-
-    if (val === secret) {
-      // 正解！
-      badge.classList.add('correct');
-      document.getElementById('history').appendChild(badge);
-      document.getElementById('message').textContent = '正解！ ' + tries + '回で当てました！';
-      document.getElementById('hint').textContent    = '答えは ' + secret + ' でした。';
-      endGame();
-
-    } else if (tries >= MAX_TRIES) {
-      // 試行回数オーバー
-      badge.classList.add(val > secret ? 'high' : 'low');
-      document.getElementById('history').appendChild(badge);
-      document.getElementById('message').textContent = '残念！ 答えは ' + secret + ' でした。';
-      document.getElementById('hint').textContent    = 'また挑戦してみよう！';
-      endGame();
-
-    } else {
-      // ヒントを表示
-      const remaining = MAX_TRIES - tries;
-      if (val > secret) {
-        badge.classList.add('high');
-        document.getElementById('message').textContent = val + ' は大きすぎます。';
-      } else {
-        badge.classList.add('low');
-        document.getElementById('message').textContent = val + ' は小さすぎます。';
-      }
-      document.getElementById('hint').textContent = '残り ' + remaining + ' 回';
-      document.getElementById('history').appendChild(badge);
-    }
-
-    input.value = '';
-    input.focus();
-  }
-
-  // ===== ゲーム終了処理 =====
-  function endGame() {
-    document.getElementById('guess-input').disabled = true;
-    document.querySelector('button').disabled       = true;
-    document.getElementById('restart-btn').style.display = 'block';
-  }
-
-  // Enterキーでも送信できる
-  document.getElementById('guess-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') submitGuess();
-  });
-
-  // ゲームスタート
-  restart();
-</script>
+  <footer>
+    Made with HTML &amp; JavaScript
+  </footer>
 
 </body>
 </html>
