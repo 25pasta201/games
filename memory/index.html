@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>神経衰弱</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #f7f6f3;
+      font-family: sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #1a1a18;
+      margin-bottom: 0.5rem;
+    }
+
+    /* ===== スコア表示 ===== */
+    .stats {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      font-size: 14px;
+      color: #888;
+    }
+
+    .stats span { color: #1a1a18; font-weight: 500; }
+
+    /* ===== カードのグリッド ===== */
+    #board {
+      display: grid;
+      grid-template-columns: repeat(4, 80px);
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ===== カード1枚 ===== */
+    .card {
+      width: 80px;
+      height: 80px;
+      cursor: pointer;
+      perspective: 600px;
+    }
+
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.4s;
+    }
+
+    /* めくれた状態 */
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    /* カードの表・裏共通 */
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backface-visibility: hidden;
+    }
+
+    /* 裏面（伏せてある状態） */
+    .card-back {
+      background: #2d6a4f;
+      color: white;
+      font-size: 24px;
+    }
+
+    /* 表面（めくれた状態） */
+    .card-front {
+      background: white;
+      border: 1.5px solid #e4e2dc;
+      font-size: 36px;
+      transform: rotateY(180deg);
+    }
+
+    /* ペア成立したカード */
+    .card.matched .card-front {
+      background: #e8f5ee;
+      border-color: #2d6a4f;
+    }
+
+    /* ===== ボタン ===== */
+    button {
+      padding: 10px 28px;
+      font-size: 14px;
+      background: #2d6a4f;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover { background: #245a41; }
+
+    /* ===== クリア메시지 ===== */
+    #clear-msg {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2d6a4f;
+      margin-bottom: 1rem;
+      min-height: 28px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>神経衰弱</h1>
+
+  <div class="stats">
+    試行回数：<span id="tries">0</span>&nbsp;&nbsp;
+    ペア：<span id="pairs">0</span> / 8
+  </div>
+
+  <div id="board"></div>
+
+  <p id="clear-msg"></p>
+  <button onclick="startGame()">はじめから</button>
+
+  <script>
+    // ===== 使う絵文字（8種類×2枚 = 16枚） =====
+    const EMOJIS = ['🍎','🍋','🍇','🍓','🍊','🍉','🍑','🍍'];
+
+    let cards = [];       // 全カードの情報
+    let flipped = [];     // 今めくっているカード
+    let matched = 0;      // 成立したペア数
+    let tries = 0;        // 試行回数
+    let lock = false;     // 連打防止フラグ
+
+    // ===== ゲームスタート =====
+    function startGame() {
+      // 絵文字を2枚ずつ用意してシャッフル
+      const deck = [...EMOJIS, ...EMOJIS].sort(() => Math.random() - 0.5);
+
+      matched = 0;
+      tries   = 0;
+      flipped = [];
+      lock    = false;
+      document.getElementById('tries').textContent = 0;
+      document.getElementById('pairs').textContent = 0;
+      document.getElementById('clear-msg').textContent = '';
+
+      const board = document.getElementById('board');
+      board.innerHTML = '';
+
+      // カードをボードに並べる
+      deck.forEach((emoji, i) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.emoji = emoji;
+        card.dataset.index = i;
+        card.innerHTML = `
+          <div class="card-inner">
+            <div class="card-back">？</div>
+            <div class="card-front">${emoji}</div>
+          </div>
+        `;
+        card.addEventListener('click', onCardClick);
+        board.appendChild(card);
+      });
+    }
+
+    // ===== カードをクリックしたとき =====
+    function onCardClick(e) {
+      const card = e.currentTarget;
+
+      // すでにめくれている・成立済み・連打中は無視
+      if (lock) return;
+      if (card.classList.contains('flipped')) return;
+      if (card.classList.contains('matched')) return;
+
+      card.classList.add('flipped');
+      flipped.push(card);
+
+      // 2枚めくったら判定
+      if (flipped.length === 2) {
+        lock = true;
+        tries++;
+        document.getElementById('tries').textContent = tries;
+        checkMatch();
+      }
+    }
+
+    // ===== ペア判定 =====
+    function checkMatch() {
+      const [a, b] = flipped;
+
+      if (a.dataset.emoji === b.dataset.emoji) {
+        // ペア成立！
+        a.classList.add('matched');
+        b.classList.add('matched');
+        matched++;
+        document.getElementById('pairs').textContent = matched;
+        flipped = [];
+        lock    = false;
+
+        // 全部そろったらクリア
+        if (matched === EMOJIS.length) {
+          document.getElementById('clear-msg').textContent =
+            '🎉 クリア！ ' + tries + '回でそろえました！';
+        }
+      } else {
+        // 不一致：少し待ってから伏せる
+        setTimeout(() => {
+          a.classList.remove('flipped');
+          b.classList.remove('flipped');
+          flipped = [];
+          lock    = false;
+        }, 900);
+      }
+    }
+
+    // ゲームスタート
+    startGame();
+  </script>
+
+</body>
+</html>
