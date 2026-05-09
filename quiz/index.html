@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>科学・自然クイズ</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #f7f6f3;
+      font-family: sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #1a1a18;
+      margin-bottom: 0.25rem;
+    }
+
+    /* ===== 進捗バー ===== */
+    .progress-wrap {
+      width: 100%;
+      max-width: 420px;
+      height: 6px;
+      background: #e4e2dc;
+      border-radius: 99px;
+      margin: 1.25rem 0;
+      overflow: hidden;
+    }
+
+    #progress-bar {
+      height: 100%;
+      background: #2d6a4f;
+      border-radius: 99px;
+      transition: width 0.4s;
+      width: 0%;
+    }
+
+    /* ===== カード ===== */
+    .card {
+      background: white;
+      border: 1px solid #e4e2dc;
+      border-radius: 14px;
+      padding: 1.75rem;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    /* ===== 問題番号 ===== */
+    #question-num {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* ===== 問題文 ===== */
+    #question-text {
+      font-size: 17px;
+      font-weight: 500;
+      color: #1a1a18;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      min-height: 60px;
+    }
+
+    /* ===== 選択肢ボタン ===== */
+    .choices { display: flex; flex-direction: column; gap: 10px; }
+
+    .choice-btn {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 14px;
+      text-align: left;
+      background: #f7f6f3;
+      color: #1a1a18;
+      border: 1.5px solid #e4e2dc;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .choice-btn:hover:not(:disabled) {
+      border-color: #2d6a4f;
+      background: #f0f7f4;
+    }
+
+    /* 正解 */
+    .choice-btn.correct {
+      background: #e8f5ee;
+      border-color: #2d6a4f;
+      color: #1a4a30;
+      font-weight: 500;
+    }
+
+    /* 不正解 */
+    .choice-btn.wrong {
+      background: #fdecea;
+      border-color: #e05a4e;
+      color: #7a1f1a;
+    }
+
+    /* ===== 解説 ===== */
+    #explanation {
+      margin-top: 1rem;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.6;
+      min-height: 20px;
+      padding: 10px 14px;
+      background: #f7f6f3;
+      border-radius: 8px;
+      display: none;
+    }
+
+    /* ===== 次へボタン ===== */
+    #next-btn {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      background: #2d6a4f;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      display: none;
+    }
+
+    #next-btn:hover { background: #245a41; }
+
+    /* ===== スコア画面 ===== */
+    #result-screen {
+      display: none;
+      text-align: center;
+    }
+
+    #result-screen .score {
+      font-size: 48px;
+      font-weight: 600;
+      color: #2d6a4f;
+      margin: 1rem 0 0.5rem;
+    }
+
+    #result-screen .score-label {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 1.5rem;
+    }
+
+    #result-screen .comment {
+      font-size: 15px;
+      color: #1a1a18;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    #restart-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      background: #2d6a4f;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    #restart-btn:hover { background: #245a41; }
+
+    /* ===== スコア表示（上部） ===== */
+    .stats {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 1rem;
+    }
+
+    .stats span { color: #1a1a18; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+  <h1>🔬 科学・自然クイズ</h1>
+  <p style="font-size:13px; color:#aaa; margin-bottom:0.5rem;">全10問に挑戦しよう！</p>
+
+  <div class="progress-wrap"><div id="progress-bar"></div></div>
+
+  <div class="stats">
+    正解数：<span id="score-display">0</span> / <span id="total-display">10</span>
+  </div>
+
+  <!-- クイズ画面 -->
+  <div class="card" id="quiz-screen">
+    <p id="question-num">問題 1 / 10</p>
+    <p id="question-text"></p>
+    <div class="choices" id="choices"></div>
+    <div id="explanation"></div>
+    <button id="next-btn" onclick="nextQuestion()">次の問題へ →</button>
+  </div>
+
+  <!-- 結果画面 -->
+  <div class="card" id="result-screen">
+    <p style="font-size:14px; color:#888;">最終スコア</p>
+    <p class="score" id="final-score"></p>
+    <p class="score-label">/ 10問</p>
+    <p class="comment" id="result-comment"></p>
+    <button id="restart-btn" onclick="startGame()">もう一度挑戦する</button>
+  </div>
+
+  <script>
+    // ===== クイズの問題 =====
+    const ALL_QUESTIONS = [
+      {
+        q: '地球上で最も大きい動物は何ですか？',
+        choices: ['アフリカゾウ', 'シロナガスクジラ', 'ジンベエザメ', 'キリン'],
+        answer: 1,
+        exp: 'シロナガスクジラは体長約30m、体重約150トンにもなる地球最大の動物です。'
+      },
+      {
+        q: '光が1秒間に進む距離はおよそどのくらいですか？',
+        choices: ['3万km', '30万km', '300万km', '3000万km'],
+        answer: 1,
+        exp: '光の速さは約30万km/秒（正確には約299,792km/秒）です。'
+      },
+      {
+        q: '水の化学式はどれですか？',
+        choices: ['CO₂', 'H₂O₂', 'H₂O', 'NaCl'],
+        answer: 2,
+        exp: '水はH₂O（水素2つと酸素1つ）です。H₂O₂は過酸化水素です。'
+      },
+      {
+        q: '太陽系で最も大きい惑星はどれですか？',
+        choices: ['土星', '天王星', '海王星', '木星'],
+        answer: 3,
+        exp: '木星は太陽系最大の惑星で、地球の約11倍の直径を持ちます。'
+      },
+      {
+        q: 'ダイヤモンドは主に何でできていますか？',
+        choices: ['ケイ素', '炭素', 'アルミニウム', '鉄'],
+        answer: 1,
+        exp: 'ダイヤモンドは炭素原子が強固に結合したもので、自然界で最も硬い物質です。'
+      },
+      {
+        q: '人間の体で最も大きい臓器はどれですか？',
+        choices: ['肺', '肝臓', '皮膚', '脳'],
+        answer: 2,
+        exp: '皮膚は体の表面を覆う最大の臓器で、面積は約1.6〜1.8㎡にもなります。'
+      },
+      {
+        q: '植物が光合成で作り出すものは何ですか？',
+        choices: ['二酸化炭素と水', '酸素とブドウ糖', '窒素とタンパク質', '水素と脂肪'],
+        answer: 1,
+        exp: '植物は光エネルギーを使って二酸化炭素と水から酸素とブドウ糖を作ります。'
+      },
+      {
+        q: '月が地球を一周するのにかかる時間はおよそ何日ですか？',
+        choices: ['7日', '14日', '27日', '365日'],
+        answer: 2,
+        exp: '月は約27.3日で地球を一周します。満月から次の満月までは約29.5日です。'
+      },
+      {
+        q: 'DNA の正式名称はどれですか？',
+        choices: ['デオキシリボ核酸', 'リボ核酸', 'アデノシン三リン酸', 'アミノ酸'],
+        answer: 0,
+        exp: 'DNAはデオキシリボ核酸（Deoxyribonucleic Acid）の略で、遺伝情報を持ちます。'
+      },
+      {
+        q: '音の速さ（音速）はおよそ何m/秒ですか（気温15℃の空気中）？',
+        choices: ['約34m/秒', '約340m/秒', '約3400m/秒', '約34000m/秒'],
+        answer: 1,
+        exp: '音速は気温15℃の空気中でおよそ340m/秒（約1224km/時）です。'
+      }
+    ];
+
+    let questions = [];
+    let current = 0;
+    let score = 0;
+    let answered = false;
+
+    // ===== ゲームスタート =====
+    function startGame() {
+      questions = [...ALL_QUESTIONS].sort(() => Math.random() - 0.5);
+      current = 0;
+      score   = 0;
+      answered = false;
+      document.getElementById('score-display').textContent = 0;
+      document.getElementById('result-screen').style.display = 'none';
+      document.getElementById('quiz-screen').style.display  = 'block';
+      showQuestion();
+    }
+
+    // ===== 問題を表示 =====
+    function showQuestion() {
+      answered = false;
+      const q = questions[current];
+      document.getElementById('question-num').textContent  = '問題 ' + (current + 1) + ' / 10';
+      document.getElementById('question-text').textContent = q.q;
+      document.getElementById('progress-bar').style.width  = (current / 10 * 100) + '%';
+      document.getElementById('explanation').style.display = 'none';
+      document.getElementById('explanation').textContent   = '';
+      document.getElementById('next-btn').style.display    = 'none';
+
+      const choicesEl = document.getElementById('choices');
+      choicesEl.innerHTML = '';
+      q.choices.forEach((text, i) => {
+        const btn = document.createElement('button');
+        btn.className   = 'choice-btn';
+        btn.textContent = text;
+        btn.onclick     = () => selectAnswer(i);
+        choicesEl.appendChild(btn);
+      });
+    }
+
+    // ===== 答えを選んだとき =====
+    function selectAnswer(index) {
+      if (answered) return;
+      answered = true;
+
+      const q       = questions[current];
+      const buttons = document.querySelectorAll('.choice-btn');
+
+      buttons.forEach(btn => btn.disabled = true);
+
+      if (index === q.answer) {
+        buttons[index].classList.add('correct');
+        score++;
+        document.getElementById('score-display').textContent = score;
+      } else {
+        buttons[index].classList.add('wrong');
+        buttons[q.answer].classList.add('correct');
+      }
+
+      // 解説を表示
+      const expEl = document.getElementById('explanation');
+      expEl.textContent   = '💡 ' + q.exp;
+      expEl.style.display = 'block';
+
+      document.getElementById('next-btn').style.display = 'block';
+      document.getElementById('next-btn').textContent   =
+        current + 1 < 10 ? '次の問題へ →' : '結果を見る';
+    }
+
+    // ===== 次の問題へ =====
+    function nextQuestion() {
+      current++;
+      if (current < 10) {
+        showQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    // ===== 結果を表示 =====
+    function showResult() {
+      document.getElementById('quiz-screen').style.display   = 'none';
+      document.getElementById('result-screen').style.display = 'block';
+      document.getElementById('progress-bar').style.width    = '100%';
+      document.getElementById('final-score').textContent     = score;
+
+      let comment = '';
+      if (score === 10)     comment = '🎉 満点！科学博士ですね！';
+      else if (score >= 8)  comment = '🌟 すばらしい！科学の知識が豊富ですね。';
+      else if (score >= 6)  comment = '👍 なかなか！もう少しで上級者です。';
+      else if (score >= 4)  comment = '😊 半分正解！復習してまた挑戦してみよう。';
+      else                  comment = '🔬 科学の世界はまだまだ奥深い！また挑戦してみよう。';
+
+      document.getElementById('result-comment').textContent = comment;
+    }
+
+    startGame();
+  </script>
+
+</body>
+</html>
